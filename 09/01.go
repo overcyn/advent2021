@@ -28,7 +28,7 @@ package main
 import (
 	"fmt"
 	"os"
-	"math"
+	// "math"
 	"strings"
 	"strconv"
 )
@@ -40,11 +40,28 @@ func main() {
 	}
 	fmt.Println("Result A:", rlt)
 	
-	rlt, err = b()
-	if err != nil {
-		panic(err)
+	// rlt, err = b()
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Println("Result B:", rlt)
+}
+
+func riskLevel(grid [][]int, x int, y int) int {
+	val := grid[x][y]
+	if x > 0 && grid[x-1][y] <= val {
+		return 0
 	}
-	fmt.Println("Result B:", rlt)
+	if x < len(grid)-1 && grid[x+1][y] <= val {
+		return 0
+	}
+	if y > 0 && grid[x][y-1] <= val {
+		return 0
+	}
+	if y < len(grid[0])-1 && grid[x][y+1] <= val {
+		return 0
+	}
+	return val + 1
 }
 
 func a() (int, error) {
@@ -55,26 +72,27 @@ func a() (int, error) {
 	}
 	
 	// Parse input
-	strs := strings.Split(string(dat), "\n")
-	ints := []int{}
-	for _, i := range strs {
-		val, err := strconv.Atoi(i)
-		if err != nil {
-			return 0, err
+	grid := [][]int{}
+	for _, i := range strings.Split(string(dat), "\n") {
+		line := []int{}
+		for _, j := range strings.Split(i, "") {
+			val, err := strconv.Atoi(j)
+			if err != nil {
+				return 0, err
+			}
+			line = append(line, val)
 		}
-		ints = append(ints, val)
+		grid = append(grid, line)
 	}
 	
 	// Calculate
-	count := 0
-	prev := math.MaxInt64
-	for _, i := range ints {
-		if i > prev {
-			count += 1
+	total := 0
+	for x := 0; x < len(grid); x++ {
+		for y := 0; y < len(grid[0]); y++ {
+			total += riskLevel(grid, x, y)
 		}
-		prev = i
 	}
-    return count, nil
+    return total, nil
 }
 
 func b() (int, error) {

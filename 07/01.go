@@ -31,6 +31,28 @@ Move from 14 to 2: 12 fuel
 This costs a total of 37 fuel. This is the cheapest possible outcome; more expensive outcomes include aligning at position 1 (41 fuel), position 3 (39 fuel), or position 10 (71 fuel).
 
 Determine the horizontal position that the crabs can align to using the least fuel possible. How much fuel must they spend to align to that position?
+
+--- Part Two ---
+
+The crabs don't seem interested in your proposed solution. Perhaps you misunderstand crab engineering?
+
+As it turns out, crab submarine engines don't burn fuel at a constant rate. Instead, each change of 1 step in horizontal position costs 1 more unit of fuel than the last: the first step costs 1, the second step costs 2, the third step costs 3, and so on.
+
+As each crab moves, moving further becomes more expensive. This changes the best horizontal position to align them all on; in the example above, this becomes 5:
+
+Move from 16 to 5: 66 fuel
+Move from 1 to 5: 10 fuel
+Move from 2 to 5: 6 fuel
+Move from 0 to 5: 15 fuel
+Move from 4 to 5: 1 fuel
+Move from 2 to 5: 6 fuel
+Move from 7 to 5: 3 fuel
+Move from 1 to 5: 10 fuel
+Move from 2 to 5: 6 fuel
+Move from 14 to 5: 45 fuel
+This costs a total of 168 fuel. This is the new cheapest possible outcome; the old alignment position (2) now costs 206 fuel instead.
+
+Determine the horizontal position that the crabs can align to using the least fuel possible so they can make you an escape route! How much fuel must they spend to align to that position?
 */
 
 package main
@@ -65,26 +87,38 @@ func a() (int, error) {
 	}
 	
 	// Parse input
-	strs := strings.Split(string(dat), "\n")
-	ints := []int{}
+	strs := strings.Split(string(dat), ",")
+	positions := []int{}
+	minPosition := 0
+	maxPosition := 0
 	for _, i := range strs {
 		val, err := strconv.Atoi(i)
 		if err != nil {
 			return 0, err
 		}
-		ints = append(ints, val)
+		positions = append(positions, val)
+		if val > maxPosition {
+			maxPosition = val
+		}
 	}
 	
 	// Calculate
-	count := 0
-	prev := math.MaxInt64
-	for _, i := range ints {
-		if i > prev {
-			count += 1
+	minFuel := math.MaxInt
+	for i := minPosition; i <= maxPosition; i++ {
+		fuel := 0
+		for _, j := range positions {
+			crabFuel := j-i
+			if crabFuel > 0 {
+				fuel += crabFuel
+			} else {
+				fuel -= crabFuel
+			}
 		}
-		prev = i
+		if fuel < minFuel {
+			minFuel = fuel
+		}
 	}
-    return count, nil
+    return minFuel, nil
 }
 
 func b() (int, error) {
@@ -95,22 +129,44 @@ func b() (int, error) {
 	}
 	
 	// Parse input
-	strs := strings.Split(string(dat), "\n")
-	ints := []int{}
+	strs := strings.Split(string(dat), ",")
+	positions := []int{}
+	minPosition := 0
+	maxPosition := 0
 	for _, i := range strs {
 		val, err := strconv.Atoi(i)
 		if err != nil {
 			return 0, err
 		}
-		ints = append(ints, val)
+		positions = append(positions, val)
+		if val > maxPosition {
+			maxPosition = val
+		}
 	}
 	
 	// Calculate
-	count := 0
-	for i := 0; i < len(ints)-3; i++ {
-		if ints[i] < ints[i+3] {
-			count += 1
+	minFuel := math.MaxInt
+	for i := minPosition; i <= maxPosition; i++ {
+		fuel := 0
+		for _, j := range positions {
+			distance := j-i
+			if distance > 0 {
+				fuel += fuelForDistance(distance)
+			} else {
+				fuel += fuelForDistance(-distance)
+			}
+		}
+		if fuel < minFuel {
+			minFuel = fuel
 		}
 	}
-    return count, nil
+    return minFuel, nil
+}
+
+func fuelForDistance(dist int) int {
+	sum := 0
+	for i := 0; i < dist; i++ {
+		sum += i + 1
+	}
+	return sum
 }

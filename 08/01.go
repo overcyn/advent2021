@@ -75,10 +75,52 @@ package main
 import (
 	"fmt"
 	"os"
-	"math"
+	// "math"
 	"strings"
 	"strconv"
 )
+
+type display [7]bool
+
+func parseDisplay(str string) (display, error) {
+	d := display{}
+	m := []string{"a", "b", "c", "d", "e", "f", "g"}
+	for idx, i := range m {
+		if strings.Contains(str, i) {
+			d[idx] = true
+		}
+	}
+	return d, nil
+}
+
+type line struct {
+	input []display
+	output []display
+}
+
+func parseLine(str string) (line, error) {
+	strs := strings.Split(str, " | ")
+	inputStrs := strings.Split(strs[0], " ")
+	inputDisplays := []display{}
+	for _, i := range inputStrs {
+		display, err := parseDisplay(i)
+		if err != nil {
+			return line{}, err
+		}
+		inputDisplays = append(inputDisplays, display)
+	}
+	
+	outputStrs := strings.Split(strs[1], " ")
+	outputDisplays := []display{}
+	for _, i := range outputStrs {
+		d, err := parseDisplay(i)
+		if err != nil {
+			return line{}, err
+		}
+		outputDisplays = append(outputDisplays, d)
+	}
+	return line{input: inputDisplays, output: outputDisplays}, nil
+}
 
 func main() {
 	rlt, err := a()
@@ -87,11 +129,11 @@ func main() {
 	}
 	fmt.Println("Result A:", rlt)
 	
-	rlt, err = b()
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("Result B:", rlt)
+	// rlt, err = b()
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Println("Result B:", rlt)
 }
 
 func a() (int, error) {
@@ -103,25 +145,31 @@ func a() (int, error) {
 	
 	// Parse input
 	strs := strings.Split(string(dat), "\n")
-	ints := []int{}
+	lines := []line{}
 	for _, i := range strs {
-		val, err := strconv.Atoi(i)
+		l, err := parseLine(i)
 		if err != nil {
 			return 0, err
 		}
-		ints = append(ints, val)
+		lines = append(lines, l)
 	}
 	
 	// Calculate
 	count := 0
-	prev := math.MaxInt64
-	for _, i := range ints {
-		if i > prev {
-			count += 1
+	for _, i := range lines {
+		for _, j := range i.output {
+			segmentCount := 0
+			for _, k := range j {
+				if k {
+					segmentCount += 1
+				}
+			}
+			if segmentCount == 2 || segmentCount == 3 || segmentCount == 4 || segmentCount == 7 {
+				count += 1
+			}
 		}
-		prev = i
 	}
-    return count, nil
+ 	return count, nil
 }
 
 func b() (int, error) {

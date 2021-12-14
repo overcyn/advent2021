@@ -68,6 +68,56 @@ Because the digits 1, 4, 7, and 8 each use a unique number of segments, you shou
 
 In the output values, how many times do digits 1, 4, 7, or 8 appear?
 
+--- Part Two ---
+
+Through a little deduction, you should now be able to determine the remaining digits. Consider again the first example above:
+
+acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab |
+cdfeb fcadb cdfeb cdbaf
+After some careful analysis, the mapping between signal wires and segments only make sense in the following configuration:
+
+ dddd
+e    a
+e    a
+ ffff
+g    b
+g    b
+ cccc
+So, the unique signal patterns would correspond to the following digits:
+
+acedgfb: 8
+cdfbe: 5
+gcdfa: 2
+fbcad: 3
+dab: 7
+cefabd: 9
+cdfgeb: 6
+eafb: 4
+cagedb: 0
+ab: 1
+Then, the four digits of the output value can be decoded:
+
+cdfeb: 5
+fcadb: 3
+cdfeb: 5
+cdbaf: 3
+Therefore, the output value for this entry is 5353.
+
+Following this same process for each entry in the second, larger example above, the output value of each entry can be determined:
+
+fdgacbe cefdb cefbgd gcbe: 8394
+fcgedb cgb dgebacf gc: 9781
+cg cg fdcagb cbg: 1197
+efabcd cedba gadfec cb: 9361
+gecf egdcabf bgf bfgea: 4873
+gebdcfa ecba ca fadegcb: 8418
+cefg dcbef fcge gbcadfe: 4548
+ed bcgafe cdgba cbgef: 1625
+gbdfcae bgc cg cgb: 8717
+fgae cfgab fg bagce: 4315
+Adding all of the output values in this larger example produces 61229.
+
+For each entry, determine all of the wire/segment connections and decode the four-digit output values. What do you get if you add up all of the output values?
 */
 
 package main
@@ -75,12 +125,20 @@ package main
 import (
 	"fmt"
 	"os"
-	// "math"
 	"strings"
-	"strconv"
 )
 
 type display [7]bool
+
+func (d display)segmentCount() int {
+	count := 0
+	for _, i := range d {
+		if i {
+			count += 1
+		}
+	}
+	return count
+}
 
 func parseDisplay(str string) (display, error) {
 	d := display{}
@@ -129,11 +187,11 @@ func main() {
 	}
 	fmt.Println("Result A:", rlt)
 	
-	// rlt, err = b()
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// fmt.Println("Result B:", rlt)
+	rlt, err = b()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Result B:", rlt)
 }
 
 func a() (int, error) {
@@ -158,12 +216,7 @@ func a() (int, error) {
 	count := 0
 	for _, i := range lines {
 		for _, j := range i.output {
-			segmentCount := 0
-			for _, k := range j {
-				if k {
-					segmentCount += 1
-				}
-			}
+			segmentCount := j.segmentCount()
 			if segmentCount == 2 || segmentCount == 3 || segmentCount == 4 || segmentCount == 7 {
 				count += 1
 			}
@@ -181,21 +234,125 @@ func b() (int, error) {
 	
 	// Parse input
 	strs := strings.Split(string(dat), "\n")
-	ints := []int{}
+	lines := []line{}
 	for _, i := range strs {
-		val, err := strconv.Atoi(i)
+		l, err := parseLine(i)
 		if err != nil {
 			return 0, err
 		}
-		ints = append(ints, val)
+		lines = append(lines, l)
 	}
 	
 	// Calculate
 	count := 0
-	for i := 0; i < len(ints)-3; i++ {
-		if ints[i] < ints[i+3] {
-			count += 1
+	for _, i := range lines {
+		inputMap := map[int]int{}
+		sixIndexes := []int{}
+		fiveIndexes := []int{}
+		
+		// Find numbers with 3, 4, 7 segments
+		for idx, j := range i.input {
+			segmentCount := j.segmentCount()
+			if segmentCount == 2 {
+				inputMap[1] = idx
+			} else if segmentCount == 3 {
+				inputMap[7] = idx
+			} else if segmentCount == 4 {
+				inputMap[4] = idx
+			} else if segmentCount == 7 {
+				inputMap[8] = idx
+			} else if segmentCount == 6 {
+				sixIndexes = append(sixIndexes, idx)
+			} else if segmentCount == 5 {
+				fiveIndexes = append(fiveIndexes, idx)
+			}
 		}
+		
+		// Find numbers with six segments
+		sixSegments := [7]int{}
+		for _, j := range sixIndexes {
+			for segIdx, k := range i.input[j] {
+				if k {
+					sixSegments[segIdx] += 1
+				}
+			}
+		}
+				
+		upperRightSegIdx := 0
+		bottomLeftSegIdx := 0
+		oneDisplay := i.input[inputMap[1]]
+		fourDisplay := i.input[inputMap[4]]
+		for segIdx, j := range sixSegments {
+			if j == 2 {
+				if oneDisplay[segIdx] {
+					// 6
+					for _, k := range sixIndexes {
+						if !i.input[k][segIdx] {
+							inputMap[6] = k
+						}
+					}
+					upperRightSegIdx = segIdx
+				} else if fourDisplay[segIdx] {
+					// 0
+					for _, k := range sixIndexes {
+						if !i.input[k][segIdx] {
+							inputMap[0] = k
+						}
+					}
+				} else {
+					// 9
+					for _, k := range sixIndexes {
+						if !i.input[k][segIdx] {
+							inputMap[9] = k
+						}
+					}
+					bottomLeftSegIdx = segIdx
+				}
+			}
+		}
+		
+		// Find numbers with five segments
+		for _, j := range fiveIndexes {
+			if !i.input[j][upperRightSegIdx] {
+				// 5
+				inputMap[5] = j
+			} else if i.input[j][bottomLeftSegIdx] {
+				// 2
+				inputMap[2] = j
+			} else {
+				// 3
+				inputMap[3] = j
+			}
+		}
+		
+		// Reverse input map
+		reverseInputMap := map[int]int{}
+		for k, v := range inputMap {
+			reverseInputMap[v] = k
+		}
+		
+		// Calculate numbers
+		output1 := 0
+		output2 := 0
+		output3 := 0
+		output4 := 0
+		for j := 0; j < 10; j++ {
+			if i.output[0] == i.input[j] {
+				output1 = reverseInputMap[j]
+			}
+			if i.output[1] == i.input[j] {
+				output2 = reverseInputMap[j]
+			}
+			if i.output[2] == i.input[j] {
+				output3 = reverseInputMap[j]
+			}
+			if i.output[3] == i.input[j] {
+				output4 = reverseInputMap[j]
+			}
+		}
+		
+		num := output1*1000+output2*100+output3*10+output4
+		count += num
 	}
-    return count, nil
+ 	return count, nil
 }

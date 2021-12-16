@@ -50,6 +50,46 @@ Did you know that syntax checkers actually have contests to see who can get the 
 In the above example, an illegal ) was found twice (2*3 = 6 points), an illegal ] was found once (57 points), an illegal } was found once (1197 points), and an illegal > was found once (25137 points). So, the total syntax error score for this file is 6+57+1197+25137 = 26397 points!
 
 Find the first illegal character in each corrupted line of the navigation subsystem. What is the total syntax error score for those errors?
+
+--- Part Two ---
+
+Next, you need to find the largest basins so you know what areas are most important to avoid.
+
+A basin is all locations that eventually flow downward to a single low point. Therefore, every low point has a basin, although some basins are very small. Locations of height 9 do not count as being in any basin, and all other locations will always be part of exactly one basin.
+
+The size of a basin is the number of locations within the basin, including the low point. The example above has four basins.
+
+The top-left basin, size 3:
+
+2199943210
+3987894921
+9856789892
+8767896789
+9899965678
+The top-right basin, size 9:
+
+2199943210
+3987894921
+9856789892
+8767896789
+9899965678
+The middle basin, size 14:
+
+2199943210
+3987894921
+9856789892
+8767896789
+9899965678
+The bottom-right basin, size 9:
+
+2199943210
+3987894921
+9856789892
+8767896789
+9899965678
+Find the three largest basins and multiply their sizes together. In the above example, this is 9 * 14 * 9 = 1134.
+
+What do you get if you multiply together the sizes of the three largest basins?
 */
 
 package main

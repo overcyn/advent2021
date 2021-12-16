@@ -21,6 +21,47 @@ In the above example, there are four low points, all highlighted: two are in the
 The risk level of a low point is 1 plus its height. In the above example, the risk levels of the low points are 2, 1, 6, and 6. The sum of the risk levels of all low points in the heightmap is therefore 15.
 
 Find all of the low points on your heightmap. What is the sum of the risk levels of all low points on your heightmap?
+
+--- Part Two ---
+
+Next, you need to find the largest basins so you know what areas are most important to avoid.
+
+A basin is all locations that eventually flow downward to a single low point. Therefore, every low point has a basin, although some basins are very small. Locations of height 9 do not count as being in any basin, and all other locations will always be part of exactly one basin.
+
+The size of a basin is the number of locations within the basin, including the low point. The example above has four basins.
+
+The top-left basin, size 3:
+
+2199943210
+3987894921
+9856789892
+8767896789
+9899965678
+The top-right basin, size 9:
+
+2199943210
+3987894921
+9856789892
+8767896789
+9899965678
+The middle basin, size 14:
+
+2199943210
+3987894921
+9856789892
+8767896789
+9899965678
+The bottom-right basin, size 9:
+
+2199943210
+3987894921
+9856789892
+8767896789
+9899965678
+Find the three largest basins and multiply their sizes together. In the above example, this is 9 * 14 * 9 = 1134.
+
+What do you get if you multiply together the sizes of the three largest basins?
+
 */
 
 package main
@@ -28,9 +69,9 @@ package main
 import (
 	"fmt"
 	"os"
-	// "math"
 	"strings"
 	"strconv"
+	"sort"
 )
 
 func main() {
@@ -40,11 +81,11 @@ func main() {
 	}
 	fmt.Println("Result A:", rlt)
 	
-	// rlt, err = b()
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// fmt.Println("Result B:", rlt)
+	rlt, err = b()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Result B:", rlt)
 }
 
 func riskLevel(grid [][]int, x int, y int) int {
@@ -62,6 +103,40 @@ func riskLevel(grid [][]int, x int, y int) int {
 		return 0
 	}
 	return val + 1
+}
+
+func basinSize(grid [][]int, x int, y int) int {
+	checked := map[[2]int]bool{}
+	return basinSize2(grid, checked, -1, x, y)
+}
+
+func basinSize2(grid [][]int, checked map[[2]int]bool, prev int, x int, y int) int {
+	// fmt.Println("basinSize", checked, x, y)
+	if !(x >= 0 && y >= 0 && x < len(grid) && y < len(grid[0])) {
+		return 0
+	}
+	if _, ok := checked[[2]int{x, y}]; ok {
+		return 0
+	}
+	if grid[x][y] < prev {
+		return 0
+	}
+	if grid[x][y] == 9 {
+		return 0
+	}
+	checked[[2]int{x, y}] = true
+	
+	size := 1
+	directions := [][]int{
+		[]int{-1, 0},
+		[]int{1, 0},
+		[]int{0, 1},
+		[]int{0, -1},
+	}
+	for _, i := range directions {
+		size += basinSize2(grid, checked, grid[x][y], x+i[0], y+i[1])
+	}
+	return size
 }
 
 func a() (int, error) {
@@ -103,22 +178,32 @@ func b() (int, error) {
 	}
 	
 	// Parse input
-	strs := strings.Split(string(dat), "\n")
-	ints := []int{}
-	for _, i := range strs {
-		val, err := strconv.Atoi(i)
-		if err != nil {
-			return 0, err
+	grid := [][]int{}
+	for _, i := range strings.Split(string(dat), "\n") {
+		line := []int{}
+		for _, j := range strings.Split(i, "") {
+			val, err := strconv.Atoi(j)
+			if err != nil {
+				return 0, err
+			}
+			line = append(line, val)
 		}
-		ints = append(ints, val)
+		grid = append(grid, line)
 	}
 	
 	// Calculate
-	count := 0
-	for i := 0; i < len(ints)-3; i++ {
-		if ints[i] < ints[i+3] {
-			count += 1
+	sizes := []int{}
+	for x := 0; x < len(grid); x++ {
+		for y := 0; y < len(grid[0]); y++ {
+			risk := riskLevel(grid, x, y)
+			if risk > 0 {
+				size := basinSize(grid, x, y)
+				sizes = append(sizes, size)
+			}
 		}
 	}
-    return count, nil
+	
+	sort.Ints(sizes)
+	
+    return sizes[len(sizes)-1] * sizes[len(sizes)-3] * sizes[len(sizes)-2], nil
 }
